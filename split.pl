@@ -1,23 +1,20 @@
 use utf8;
 use File::Path qw (make_path remove_tree);
+use File::Copy;
 use Data::Dumper;
 binmode (STDOUT, ":utf8");
 
 main ();
 
-my %page = ();
-
 ################################################################################
 
 sub main {
 	clean_up ();
-	my $src = 'src';
-	opendir (DIR, $src) or die "Can't opendir $src: $!\n";
-	split_html ($_) foreach (map {"$src/$_"} grep {/html$/} readdir (DIR));
-	closedir DIR;
+	write_pages ();
 	decorate ($_) foreach (values %page);
 	complete ($_) foreach (values %page);
 	print_index ();
+	copy_images ();
 	warn "Done.\n";
 }
 
@@ -28,6 +25,31 @@ my $prefix;
 my $is_open = 0;
 my $last_line;
 my $version;
+my %page = ();
+
+################################################################################
+
+sub copy_images {
+	my $src = 'src/resource';
+	opendir (DIR, $src) or die "Can't opendir $src: $!\n";
+	warn "Copying images...\n";
+	foreach (map {"$src/$_"} grep {/(gif|png)$/} readdir (DIR)) {
+		my $from = $_;
+		my $to = $from;
+		$to =~ s{$src}{target/img};
+		File::Copy::copy ($from, $to);
+	}
+	closedir DIR;
+}
+
+################################################################################
+
+sub write_pages {
+	my $src = 'src';
+	opendir (DIR, $src) or die "Can't opendir $src: $!\n";
+	split_html ($_) foreach (map {"$src/$_"} grep {/html$/} readdir (DIR));
+	closedir DIR;
+}
 
 ################################################################################
 
@@ -36,7 +58,9 @@ sub clean_up {
 	remove_tree ('target/ws');
 	remove_tree ('target/xs');
 	remove_tree ('target/css');
+	remove_tree ('target/img');
 	make_path   ('target/css');
+	make_path   ('target/img');
 }
 
 ################################################################################
