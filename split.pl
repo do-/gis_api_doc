@@ -9,11 +9,13 @@ main ();
 ################################################################################
 
 my %page = ();
+
 sub main {
 	clean_up ();
 	write_pages ();
 	decorate ($_) foreach (values %page);
 	complete ($_) foreach (values %page);
+	append_css ();
 	print_index ();
 	copy_images ();
 	warn "Done.\n";
@@ -26,6 +28,8 @@ my $prefix;
 my $is_open = 0;
 my $last_line;
 my $version;
+my $depth_html=0;
+my $depth_css=0;
 
 ################################################################################
 
@@ -92,6 +96,24 @@ sub print_index {
 	}	
 
 	print O "</table>";
+	close (O);
+
+}
+
+################################################################################
+
+sub append_css {
+
+	my $fn = "target/css/style.css";
+	open (O, ">>:encoding(UTF-8)", $fn) or die "Can't append to $fn: $!\n";
+	warn "Fixing CSS...\n";
+
+	for (my $i = $depth_css + 1; $i < $depth_html; $i ++) {
+		my $px = 10 * (1 + $i);
+		print O "tr.startGroup$i td.first {padding-left:$px;}\n";
+		print O "tr.group$i td.first {padding-left:$px;}\n";
+	}
+
 	close (O);
 
 }
@@ -197,7 +219,7 @@ sub print_relinked {
 		}
 	
 	}
-	
+		
 	foreach my $chunk (split /(href="#.*?")/, $line) {
 
 		if ($chunk =~ /href="#(.*?)"/) {
@@ -247,19 +269,37 @@ sub split_html {
 				$css = -1;
 			}
 			else {
+			
 				$line =~ s{url\(resource}{url\(/img};
+			
+				if ($line =~ /^tr\.group(\d+)/) {
+					$depth_css >= $1 or $depth_css = $1;
+				}
+				
 				print CSS $line;
+				
 			}
 
 		}
 		else {
 			$line =~ /^\s*<h[345]>(.*?)<\/h[345]>$/ and check_header ($1);
-			print O $line if $is_open;
+
+			if ($is_open) {
+
+				if ($line =~ /^\s*<tr class="group(\d+)"/) {
+					$depth_html >= $1 or $depth_html = $1;
+				}
+
+				print O $line;
+
+			}
+			
 			$last_line = $line;
+
 		}
-		
+
 	}
-	
+
 	close (O);
 	close (I);
 
