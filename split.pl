@@ -29,7 +29,6 @@ my $is_open = 0;
 my $last_line;
 my $version;
 my $depth_html=0;
-my $depth_css=0;
 
 ################################################################################
 
@@ -108,10 +107,45 @@ sub append_css {
 	open (O, ">>:encoding(UTF-8)", $fn) or die "Can't append to $fn: $!\n";
 	warn "Fixing CSS...\n";
 
-	for (my $i = $depth_css + 1; $i < $depth_html; $i ++) {
-		my $px = 10 * (1 + $i);
-		print O "tr.startGroup$i td.first {padding-left:$px;}\n";
-		print O "tr.group$i td.first {padding-left:$px;}\n";
+	for (my $i = 0; $i < $depth_html; $i ++) {
+	
+		my $x = 80 - $i * 10;
+		my $y = ($i + 1) * 10;
+			
+		my $c = 'hsl(' . (($i * 2267) % 360) . ',75%,75%)';
+		
+		print O qq [
+		
+			tr.startGroup$i td.first { 
+				background-color: $c;
+				padding-top: 2px;
+				padding-bottom: 0px;
+				background-image: url(/img/TopTab.gif);
+				background-repeat: no-repeat;
+				padding-left: ${y}; 
+				background-position: -${x}px 0;
+			}
+
+			tr.endGroup$i td.first {
+				background-color: $c;
+				height: 10px;
+				background-image: url(/img/BottomTab.gif);
+				background-repeat: no-repeat;
+				padding-left: ${y}; 
+				background-position: -${x}px 0;
+			}
+
+			tr.group$i td.first {
+				padding-left: ${y};
+			}
+
+			tr.startGroup$i td.middle, tr.startGroup$i td.last, 
+			tr.endGroup$i td.middle, tr.endGroup$i td.last {
+				background-color: $c;
+			}
+			
+		];
+		
 	}
 
 	close (O);
@@ -268,16 +302,9 @@ sub split_html {
 				close (CSS);
 				$css = -1;
 			}
-			else {
-			
-				$line =~ s{url\(resource}{url\(/img};
-			
-				if ($line =~ /^tr\.group(\d+)/) {
-					$depth_css >= $1 or $depth_css = $1;
-				}
-				
-				print CSS $line;
-				
+			else {			
+				$line =~ s{url\(resource}{url\(/img};				
+				print CSS $line;				
 			}
 
 		}
