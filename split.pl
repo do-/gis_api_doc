@@ -79,10 +79,10 @@ sub print_index {
 
 	my $last_srv;
 	foreach my $path (sort grep /^ws/, keys %page) {
-	
-		my ($pre, $srv, $meth) = split /\W/, $path;
 
-		next if $srv !~ /Async$/ or $meth eq 'index';
+		next if $path =~ /index\.html$/;
+		next if $path !~ /Async/;
+		my ($pre, $srv, $meth) = split /\W/, $path;
 
 		if ($last_srv ne $srv) {
 			my $p = "ws/$srv/index.html";
