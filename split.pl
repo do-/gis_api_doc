@@ -18,6 +18,7 @@ sub main {
 	append_css ();
 	print_index ();
 	copy_images ();
+	copy_js ();
 	warn "Done.\n";
 }
 
@@ -47,6 +48,21 @@ sub copy_images {
 
 ################################################################################
 
+sub copy_js {
+	my $src = 'js';
+	opendir (DIR, $src) or die "Can't opendir $src: $!\n";
+	warn "Copying js...\n";
+	foreach (map {"$src/$_"} grep {/\.js$/} readdir (DIR)) {
+		my $from = $_;
+		my $to = $from;
+		$to =~ s{$src}{target/js};
+		File::Copy::copy ($from, $to);
+	}
+	closedir DIR;
+}
+
+################################################################################
+
 sub write_pages {
 	my $src = 'src';
 	opendir (DIR, $src) or die "Can't opendir $src: $!\n";
@@ -64,6 +80,7 @@ sub clean_up {
 	remove_tree ('target/img');
 	make_path   ('target/css');
 	make_path   ('target/img');
+	make_path   ('target/js');
 }
 
 ################################################################################
@@ -223,6 +240,8 @@ sub print_head {
 		<head>
 			<title>$page->{label}</title>
 			<link href="/css/style.css" rel="stylesheet" type="text/css">
+			<script src="/js/jquery-3.1.1.min.js"></script>
+			<script src="/js/js.js"></script>
 		</head>
 		<body>
 			<div class="title">
